@@ -1,0 +1,44 @@
+services:
+  frontend:
+    build:
+      context: ./app/frontend/
+      dockerfile: Dockerfile
+      target: develop
+    tty: true
+    stdin_open: true
+    volumes:
+      - type: bind
+        source: './app/frontend/'
+        target: '/app'
+  backend:
+    build:
+      context: ./app/backend/
+      dockerfile: Dockerfile
+      target: develop
+    tty: true
+    stdin_open: true
+    volumes:
+      - type: bind
+        source: './app/backend/'
+        target: '/app'
+  database:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    ports:
+      - '5432:5432'
+    volumes:
+      - data_store:/var/lib/postgresql/data
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - '80:80'
+    volumes:
+      - ./nginx/logs:/var/log/nginx
+    environment:
+      - SERVER_NAME=localhost
+volumes:
+  data_store:
+    name: data_store

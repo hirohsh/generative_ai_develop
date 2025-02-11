@@ -1,0 +1,23 @@
+{
+    "name": "DOCKER TEST FRONTEND",
+    "dockerComposeFile": "../../docker-compose.yml",
+    "service": "frontend",
+    "workspaceFolder": "/app",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "dsznajder.es7-react-js-snippets",
+                "dbaeumer.vscode-eslint",
+                "christian-kohler.path-intellisense",
+                "esbenp.prettier-vscode",
+                "IBM.output-colorizer",
+                "bradlc.vscode-tailwindcss",
+                "oderwat.indent-rainbow",
+                "usernamehw.errorlens",
+                "alefragnani.Bookmarks",
+                "aaron-bond.better-comments"
+            ]
+        }
+    }
+
+}
