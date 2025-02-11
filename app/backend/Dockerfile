@@ -9,10 +9,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 # 環境変数の設定
 ENV PATH="/root/.cargo/bin:${PATH}" \
     UV_LINK_MODE=copy \
-    UV_COMPILE_BYTECODE=1 \
-    UV_PYTHON_DOWNLOADS=never \
-    UV_PYTHON=python3.11
-
+    UV_COMPILE_BYTECODE=1
 
 
 FROM base as builder
@@ -38,11 +35,13 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2
     rm -rf awscliv2.zip aws
 # 作業ディレクトリの設定
 WORKDIR /app
+EXPOSE 8000
 
 FROM gcr.io/distroless/python3-debian12:debug-nonroot as staging
 COPY --from=builder --chown=nonroot:nonroot /app/.venv /app/.venv
 WORKDIR /app
 USER nonroot
+EXPOSE 8000
 CMD ["/app/.venv/bin/hello"]
 
 
@@ -50,4 +49,5 @@ FROM gcr.io/distroless/python3-debian12:nonroot as production
 COPY --from=builder --chown=nonroot:nonroot /app/.venv /app/.venv
 WORKDIR /app
 USER nonroot
-CMD ["/app/.venv/bin/fastapi", "run", "app/main.py", "--port", "80"]
+EXPOSE 8000
+CMD ["/app/.venv/bin/fastapi", "run", "app/main.py", "--port", "8000"]

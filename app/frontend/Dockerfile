@@ -1,5 +1,5 @@
 FROM node:22-bookworm-slim as base
-WORKDIR /app
+
 
 FROM base as builder
 COPY package*.json ./
@@ -9,6 +9,9 @@ RUN npm run build
 
 FROM base as develop
 ENV NODE_ENV=development
+EXPOSE 3000
+WORKDIR /app
+
 
 FROM gcr.io/distroless/nodejs22-debian12:debug-nonroot as staging
 ENV NODE_ENV=production

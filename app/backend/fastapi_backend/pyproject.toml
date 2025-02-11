@@ -1,10 +1,13 @@
 [project]
-name = "fastapi"
+name = "fastapi_backend"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "fastapi>=0.115.8",
+    "uvicorn>=0.34.0",
+]
 
 ############
 # mypyの設定
