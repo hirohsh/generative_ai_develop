@@ -3,6 +3,7 @@
     "mypy-type-checker.args": [
         "--config=pyproject.toml"
     ],
+    "mypy-type-checker.cwd": "${nearestConfig}",
     // Ruffの設定
     "[python]": {
         "editor.defaultFormatter": "charliermarsh.ruff",
