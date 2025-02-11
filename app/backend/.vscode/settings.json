@@ -2,9 +2,9 @@
     //isort
     "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": [
-        "source.organizeImports"
-    ],
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": true
+    },
     //black
     "python.formatting.provider": "black",
     //flake8
