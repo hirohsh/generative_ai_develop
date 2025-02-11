@@ -1,11 +1,12 @@
-from fastapi import APIRouter, FastAPI
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI
+
+from app.routers import router
 
 app: FastAPI = FastAPI()
 
-router = APIRouter(prefix="/api/v0")
+app.include_router(router)
 
 
-@router.get("/")
-async def test() -> JSONResponse:
-    return JSONResponse(content={"message": "test"})
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)  # noqa: S104

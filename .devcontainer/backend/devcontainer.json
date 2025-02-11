@@ -2,7 +2,7 @@
     "name": "DOCKER TEST BACKEND",
     "dockerComposeFile": "../../docker-compose.yml",
     "service": "backend",
-    "workspaceFolder": "/app",
+    "workspaceFolder": "/app/fastapi_backend",
     "customizations": {
         "vscode": {
             "extensions": [
