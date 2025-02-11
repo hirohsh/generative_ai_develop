@@ -1,6 +1,6 @@
 FROM python:3.11-slim-bookworm as base
-WORKDIR /app
-RUN apt-get update && apt-get install -y \
+# 必要なパッケージのインストール
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -14,6 +14,7 @@ ENV PATH="/root/.cargo/bin:${PATH}" \
     UV_PYTHON=python3.11
 
 
+
 FROM base as builder
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
@@ -25,7 +26,18 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 
 FROM base as develop
-
+# 必要なパッケージのインストール
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    unzip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+# AWS CLI のインストール
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    rm -rf awscliv2.zip aws
+# 作業ディレクトリの設定
+WORKDIR /app
 
 FROM gcr.io/distroless/python3-debian12:debug-nonroot as staging
 COPY --from=builder --chown=nonroot:nonroot /app/.venv /app/.venv

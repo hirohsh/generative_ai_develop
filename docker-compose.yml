@@ -21,6 +21,10 @@ services:
       - type: bind
         source: './app/backend/'
         target: '/app'
+      - type: bind
+        source: '/home/hiro/.aws'
+        target: '/root/.aws'
+        read_only: true
   database:
     build:
       context: ./database
