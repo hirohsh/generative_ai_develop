@@ -1,11 +1,76 @@
-from collections.abc import Sequence
-from typing import Protocol
+from __future__ import annotations
 
-from botocore.eventstream import EventStream
-from botocore.response import StreamingBody
-from mypy_boto3_bedrock_runtime.type_defs import BlobTypeDef, MessageTypeDef, MessageUnionTypeDef, ResponseStreamTypeDef
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Generic, Protocol, TypedDict, TypeVar, runtime_checkable
+
+from fastapi import UploadFile
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from botocore.eventstream import EventStream
+    from fastapi.responses import ORJSONResponse
+    from mypy_boto3_bedrock_runtime import BedrockRuntimeClient
+    from mypy_boto3_bedrock_runtime.type_defs import (
+        BlobTypeDef,
+        InvokeModelRequestRequestTypeDef,
+        MessageTypeDef,
+        MessageUnionTypeDef,
+        ResponseStreamTypeDef,
+    )
 
 
+# 型定義
+T = TypeVar("T")
+
+
+class ConfigTypeDef(TypedDict, Generic[T]):
+    """
+    bedrock用の設定を保持する`TypedDict`
+
+    Attributes:
+        sdk (InvokeModelRequestRequestTypeDef): SDKのメソッド呼び出し時に使用する設定。
+        model (T): 各モデルに渡す設定。
+    """
+
+    sdk: InvokeModelRequestRequestTypeDef
+    model: T
+
+
+InvokeRequestTypeDef = str | bytes | UploadFile
+
+
+class BedrockModelBase(ABC, Generic[T]):
+    """
+    bedrock モデルサービスの抽象基底クラス
+    サービスクラスを作成する際、必ず継承すること。
+
+    継承するクラスは以下のメソッドを実装する必要がある:
+    - from_dependency(cls, client: BedrockRuntimeClient, config: ConfigTypeDef[T]) -> BedrockModelBase[T]:
+    """
+
+    def __init__(self, client: BedrockRuntimeClient, config: ConfigTypeDef[T]) -> None:
+        self.client = client
+        self.config = config
+
+    @classmethod
+    @abstractmethod
+    def from_dependency(cls, client: BedrockRuntimeClient, config: ConfigTypeDef[T]) -> BedrockModelBase[T]:
+        """
+        FastAPI の `Depends` で使用する依存性注入メソッド。
+        サブクラスで必ず実装し、依存性を注入したサービスのインスタンスを生成する。
+
+        Args:
+            client (BedrockRuntimeClient): bedrockのクライアント
+            config (ConfigTypeDef[T]): モデル設定
+
+        Returns:
+            BedrockModelBase[T]: 設定を適用したサービスのインスタンス
+        """
+        ...
+
+
+@runtime_checkable
 class ISupportsConverse(Protocol):
     """
     Converse機能をサポートするモデル向けのプロトコル。
@@ -38,13 +103,14 @@ class ISupportsConverse(Protocol):
         ...
 
 
+@runtime_checkable
 class ISupportsConverseStream(Protocol):
     """
     ConverseStream機能をサポートするモデル向けのプロトコル。
 
     継承するクラスは以下のメソッドを実装する必要がある:
     - converse_stream(self, messages: Sequence[MessageTypeDef]) -> str
-    - generate_converse_stream_prompt(self, messages: Sequence[MessageTypeDef]) -> Sequence[MessageTypeDef] | None
+    - generate_converse_stream_prompt(self, messages: Sequence[MessageTypeDef]) -> Sequence[MessageTypeDef]
     """
 
     def converse_stream(self, messages: Sequence[MessageTypeDef]) -> str:
@@ -59,7 +125,7 @@ class ISupportsConverseStream(Protocol):
         """
         ...
 
-    def generate_converse_stream_prompt(self, messages: Sequence[MessageTypeDef]) -> Sequence[MessageTypeDef] | None:
+    def generate_converse_stream_prompt(self, messages: Sequence[MessageTypeDef]) -> Sequence[MessageTypeDef]:
         """
         Converse API stream用のプロンプトを生成する。
 
@@ -67,21 +133,22 @@ class ISupportsConverseStream(Protocol):
             messages (Sequence[MessageTypeDef]): テキスト
 
         Returns:
-            Sequence[MessageTypeDef] | None: プロンプト
+            Sequence[MessageTypeDef]: プロンプト
         """
         ...
 
 
+@runtime_checkable
 class ISupportsInvokeModel(Protocol):
     """
     InvokeModel機能をサポートするモデル向けのプロトコル。
 
     継承するクラスは以下のメソッドを実装する必要がある:
     - invoke_model(self, payload: BlobTypeDef) -> StreamingBody
-    - generate_invoke_model_payload(self, text: str) -> BlobTypeDef | None
+    - generate_invoke_model_payload(self, user_input (BlobTypeDef)) -> BlobTypeDef
     """
 
-    def invoke_model(self, payload: BlobTypeDef) -> StreamingBody:
+    def invoke_model(self, payload: BlobTypeDef) -> ORJSONResponse:
         """
         ペイロードを用いてモデルを呼び出す。
 
@@ -89,30 +156,31 @@ class ISupportsInvokeModel(Protocol):
             payload (BlobTypeDef): モデル呼び出しに必要なパラメータ
 
         Returns:
-            StreamingBody: モデルからのレスポンス。
+            ORJSONResponse: モデルからのレスポンス。
         """
         ...
 
-    def generate_invoke_model_payload(self, text: str) -> BlobTypeDef | None:
+    def generate_invoke_model_payload(self, user_input: InvokeRequestTypeDef) -> BlobTypeDef:
         """
         invoke_model用のペイロードを生成する。
 
         Args:
-            text (str): ユーザーからの入力
+            user_input (BlobTypeDef): ユーザーからの入力
 
         Returns:
-            BlobTypeDef | None: ペイロード
+            BlobTypeDef: ペイロード
         """
         ...
 
 
+@runtime_checkable
 class ISupportsInvokeModelStream(Protocol):
     """
     InvokeModelStream機能をサポートするモデル向けのプロトコル。
 
     継承するクラスは以下のメソッドを実装する必要がある:
     - invoke_model_stream(self, payload: BlobTypeDef) -> EventStream[ResponseStreamTypeDef]
-    - generate_invoke_model_stream_payload(self, text: str) -> BlobTypeDef | None
+    - generate_invoke_model_stream_payload(self, user_input (BlobTypeDef)) -> BlobTypeDef
     """
 
     def invoke_model_stream(self, payload: BlobTypeDef) -> EventStream[ResponseStreamTypeDef]:
@@ -127,14 +195,14 @@ class ISupportsInvokeModelStream(Protocol):
         """
         ...
 
-    def generate_invoke_model_stream_payload(self, text: str) -> BlobTypeDef | None:
+    def generate_invoke_model_stream_payload(self, user_input: BlobTypeDef) -> BlobTypeDef:
         """
         invoke_model_stream用のペイロードを生成する。
 
         Args:
-            text (str): ユーザーからの入力
+            user_input (BlobTypeDef): ユーザーからの入力
 
         Returns:
-            BlobTypeDef | None: ペイロード
+            BlobTypeDef: ペイロード
         """
         ...
