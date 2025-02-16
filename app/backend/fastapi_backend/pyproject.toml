@@ -5,7 +5,11 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "boto3>=1.36.18",
+    "boto3-stubs[bedrock-runtime]>=1.36.18",
     "fastapi>=0.115.8",
+    "orjson>=3.10.15",
+    "python-multipart>=0.0.20",
     "uvicorn>=0.34.0",
 ]
 
@@ -40,7 +44,8 @@ ignore_missing_imports = true
 ############
 
 [tool.ruff]
-line-length = 120
+
+line-length = 130
 
 # Option Settings
 ## https://gihyo.jp/article/2023/03/monthly-python-2303
@@ -74,6 +79,8 @@ target-version = "py311"
     "S603", # Shell無しのsubprocessを許可
     "T201", # print文を許可するため
     "TRY002", # 標準のExceptionの使用を許可
+    "UP006", # Typeの使用を許可する
+    "UP035", # Typeのimportを許可
 ]
 
 [tool.ruff.lint.pydocstyle]
