@@ -1,4 +1,7 @@
-# マッピング定義
+"""
+Bedrock サービスの依存性注入用定義とマッピングを記載する。
+"""
+
 from typing import Annotated, Type
 
 import boto3
