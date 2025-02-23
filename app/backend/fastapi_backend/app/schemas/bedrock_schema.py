@@ -1,3 +1,7 @@
+"""
+Bedrock サービスで使用するデータモデルを定義する。
+"""
+
 from typing import Any, Dict, List
 
 from mypy_boto3_bedrock_runtime.literals import (
