@@ -1,7 +1,11 @@
+"""
+Bedrock モデル向けのプロトコルと抽象クラスを定義する。
+"""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generic, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, AsyncGenerator, Generic, Protocol, runtime_checkable
 
 from app.types.bedrock_type_defs import ConfigTypeDef, T
 
@@ -40,7 +44,7 @@ class ISupportsConverse(Protocol):
     - generate_converse_messages
     """
 
-    def converse(self, messages: Sequence[MessageUnionTypeDef]) -> str:
+    async def converse(self, messages: Sequence[MessageUnionTypeDef]) -> str:
         """
         Converse API を使用して メッセージを送信する。
 
@@ -75,15 +79,15 @@ class ISupportsConverseStream(Protocol):
     - generate_converse_stream_messages
     """
 
-    def converse_stream(self, messages: Sequence[MessageTypeDef]) -> str:
+    def converse_stream(self, messages: Sequence[MessageTypeDef]) -> AsyncGenerator[str, None]:
         """
         Converse Stream API を使用して メッセージを送信する。
 
         Args:
             messages (Sequence[MessageUnionTypeDef]): ユーザーの会話履歴
 
-        Returns:
-            str: モデルからのレスポンス文字列。
+        Yields:
+            str: 各チャンクの部分的なレスポンス
         """
         ...
 
@@ -110,7 +114,7 @@ class ISupportsInvokeModel(Protocol):
     - generate_invoke_model_payload
     """
 
-    def invoke_model(self, payload: BlobTypeDef) -> str:
+    async def invoke_model(self, payload: BlobTypeDef) -> str:
         """
         ペイロードを用いてモデルを呼び出す。
 
@@ -145,15 +149,15 @@ class ISupportsInvokeModelStream(Protocol):
     - generate_invoke_model_stream_payload
     """
 
-    def invoke_model_stream(self, payload: BlobTypeDef) -> str:
+    def invoke_model_stream(self, payload: BlobTypeDef) -> AsyncGenerator[str, None]:
         """
         ペイロードを用いてモデルを呼び出す。
 
         Args:
             payload (BlobTypeDef): ペイロード
 
-        Returns:
-            str: モデルからのレスポンス。
+        Yields:
+            str: 各チャンクの部分的なレスポンス
         """
         ...
 
@@ -234,7 +238,7 @@ class SupportsConverseMixin(ABC, ISupportsConverse):
         return response
 
     @abstractmethod
-    def converse(self, messages: Sequence[MessageUnionTypeDef]) -> str:
+    async def converse(self, messages: Sequence[MessageUnionTypeDef]) -> str:
         """
         Converse API を使用して メッセージを送信する。
         _converseメソッドを内部で使用すること。
@@ -277,7 +281,7 @@ class SupportsConverseStreamMixin(ABC, ISupportsConverseStream):
         return response
 
     @abstractmethod
-    def converse_stream(self, messages: Sequence[MessageTypeDef]) -> str:
+    def converse_stream(self, messages: Sequence[MessageTypeDef]) -> AsyncGenerator[str, None]:
         """
         Converse Stream API を使用して メッセージを送信する。
         __converse_streamメソッドを内部で使用すること。
@@ -319,7 +323,7 @@ class SupportsInvokeModelMixin(ABC, ISupportsInvokeModel):
         return response
 
     @abstractmethod
-    def invoke_model(self, payload: BlobTypeDef) -> str:
+    async def invoke_model(self, payload: BlobTypeDef) -> str:
         """
         ペイロードを用いてモデルを呼び出す。
         _invoke_modelメソッドを内部で使用すること。
@@ -364,7 +368,7 @@ class SupportsInvokeModelStreamMixin(ABC, ISupportsInvokeModelStream):
         return response
 
     @abstractmethod
-    def invoke_model_stream(self, payload: BlobTypeDef) -> str:
+    def invoke_model_stream(self, payload: BlobTypeDef) -> AsyncGenerator[str, None]:
         """
         ペイロードを用いてモデルを呼び出す。
         _invoke_model_streamメソッドを内部で使用すること。
