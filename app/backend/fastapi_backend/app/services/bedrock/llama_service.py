@@ -1,37 +1,42 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import TYPE_CHECKING, Any, List
 
 from botocore.exceptions import ClientError
 from fastapi import HTTPException
-from fastapi.responses import ORJSONResponse
 
-from app.interfaces.bedrock_interface import BedrockModelBase, ConfigTypeDef, ISupportsInvokeModel
+from app.interfaces.bedrock_interface import (
+    BedrockModelBase,
+    ConfigTypeDef,
+    SupportsConverseMixin,
+    SupportsInvokeModelMixin,
+)
+from app.types.bedrock_type_defs import LlamaConfigTypeDef, LlamaInvokeRequestModelConfigTypeDef
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from mypy_boto3_bedrock_runtime import BedrockRuntimeClient
-    from mypy_boto3_bedrock_runtime.type_defs import BlobTypeDef, InvokeModelResponseTypeDef
+    from mypy_boto3_bedrock_runtime.type_defs import (
+        BlobTypeDef,
+        ContentBlockUnionTypeDef,
+        ConverseRequestRequestTypeDef,
+        ConverseResponseTypeDef,
+        InvokeModelRequestRequestTypeDef,
+        InvokeModelResponseTypeDef,
+        MessageTypeDef,
+        MessageUnionTypeDef,
+    )
 
-    from app.routers.v1.bedrock_router import InvokeRequestTypeDef
-
-
-# モデルに渡す設定の型
-class LlamaConfigTypeDef(TypedDict):
-    prompt: str
-    temperature: float
-    top_p: float
-    max_gen_len: int
-
-
-# モデルで使用する設定
-LLAMA_CONFIG: ConfigTypeDef[LlamaConfigTypeDef] = {
-    "sdk": {"modelId": "us.meta.llama3-3-70b-instruct-v1:0", "contentType": "application/json"},
-    "model": {"prompt": "", "max_gen_len": 512, "temperature": 0.5, "top_p": 0.9},
-}
+    from app.schemas.bedrock_schema import MessageList
 
 
-class LlamaService(BedrockModelBase[LlamaConfigTypeDef], ISupportsInvokeModel):
+class LlamaService(BedrockModelBase[LlamaConfigTypeDef], SupportsConverseMixin, SupportsInvokeModelMixin):
+    """
+    Llama3モデルに関する処理を提供するサービスクラス
+    """
+
     @classmethod
     def from_dependency(cls, client: BedrockRuntimeClient, config: ConfigTypeDef[LlamaConfigTypeDef]) -> LlamaService:
         """
@@ -47,7 +52,7 @@ class LlamaService(BedrockModelBase[LlamaConfigTypeDef], ISupportsInvokeModel):
         """
         return cls(client, config)
 
-    def invoke_model(self, payload: BlobTypeDef) -> ORJSONResponse:
+    def invoke_model(self, payload: BlobTypeDef) -> str:
         """
         ペイロードを用いてモデルを呼び出す。
 
@@ -55,47 +60,93 @@ class LlamaService(BedrockModelBase[LlamaConfigTypeDef], ISupportsInvokeModel):
             payload (BlobTypeDef): ペイロード
 
         Returns:
-            ORJSONResponse: モデルからのレスポンス。
+            str: モデルからのレスポンス。
         """
+        invoke_config: InvokeModelRequestRequestTypeDef = self.config["sdk"]["invoke"].copy()
+        invoke_config["body"] = payload
         try:
-            self.config["sdk"]["body"] = payload
-
             # モデルの呼び出し
-            response: InvokeModelResponseTypeDef = self.client.invoke_model(**self.config["sdk"])
+            print(invoke_config)
+            response: InvokeModelResponseTypeDef = self._invoke_model(self.client, invoke_config)
 
+        except ClientError as e:
+            print(f"エラーが発生しました: {e}")
+            raise HTTPException(status_code=400, detail="無効な入力です") from e
+        else:
             # レスポンスの解析
             response_body: Any = json.loads(response["body"].read())
             generated_text: str = response_body["generation"]
 
-            return ORJSONResponse(content=generated_text)
-        except ClientError as e:
-            print(f"エラーが発生しました: {e}")
-            raise HTTPException(status_code=400, detail="無効な入力です") from e
+            return generated_text
 
-    def generate_invoke_model_payload(self, user_input: InvokeRequestTypeDef) -> BlobTypeDef:
+    def generate_invoke_model_payload(self, message_list_schema: MessageList) -> BlobTypeDef:
         """
         invoke_model用のペイロードを生成する。
 
         Args:
-            user_input (BlobTypeDef): ユーザーからの入力
+            message_list_schema (MessageList): ユーザーからの入力
 
         Returns:
             BlobTypeDef: ペイロード
         """
+        # いったん入力テキストをフォーマットするだけにする
+        dumped_schema: dict[str, Any] = message_list_schema.model_dump()
+        message: MessageTypeDef = dumped_schema["messages"][0]
+        content: ContentBlockUnionTypeDef = message["content"][0]
 
-        if not isinstance(user_input, str):
+        if "text" not in content or not content["text"].strip():
             raise HTTPException(status_code=400, detail="無効な入力です")
 
         # Llama 3.3 Instructモデル用のプロンプトフォーマット
         formatted_prompt: str = f"""
         <|begin_of_text|><|start_header_id|>user<|end_header_id|>
-        {user_input}
+        {content["text"]}
         <|eot_id|>
         <|start_header_id|>assistant<|end_header_id|>
         """
 
         # リクエストペイロードの作成
-        self.config["model"]["prompt"] = formatted_prompt
-        request_payload: str = json.dumps(self.config["model"])
+        payload: LlamaInvokeRequestModelConfigTypeDef = self.config["model"]["invoke"].copy()
+        payload["prompt"] = formatted_prompt
+        request_payload: str = json.dumps(payload)
 
         return request_payload
+
+    def converse(self, messages: Sequence[MessageUnionTypeDef]) -> str:
+        """
+        Converse API を使用して メッセージを送信する。
+
+        Args:
+            messages (Sequence[MessageUnionTypeDef]): ユーザーの会話履歴
+
+        Returns:
+            str: モデルからのレスポンス文字列。
+        """
+        converse_config: ConverseRequestRequestTypeDef = self.config["sdk"]["converse"].copy()
+        converse_config["messages"] = messages
+        try:
+            # モデルの呼び出し
+            print(converse_config)
+            response: ConverseResponseTypeDef = self._converse(self.client, converse_config)
+        except ClientError as e:
+            print(f"エラーが発生しました: {e}")
+            raise HTTPException(status_code=400, detail="無効な入力です") from e
+        else:
+            return response["output"]["message"]["content"][0]["text"]
+
+    def generate_converse_messages(self, message_list_schema: MessageList) -> Sequence[MessageUnionTypeDef]:
+        """
+        Converse API に渡す会話履歴を作成する。
+
+        Args:
+            message_list_schema (MessageList): ユーザーの入力
+
+        Returns:
+            Sequence[MessageUnionTypeDef]: 会話履歴
+        """
+        # ここでDBなどから履歴を取得して入れてもいい
+        # 今はいったんこのまま返す
+        dumped_schema: dict[str, Any] = message_list_schema.model_dump(exclude_none=True)
+        messages: List[MessageTypeDef] = dumped_schema["messages"]
+        print(messages)
+        return messages
