@@ -90,14 +90,20 @@ class LlamaService(
             print(invoke_config)
             response: InvokeModelResponseTypeDef = await asyncio.to_thread(self._invoke_model, self.client, invoke_config)
 
-        except ClientError as e:
-            print(f"エラーが発生しました: {e}")
-            raise HTTPException(status_code=400, detail="無効な入力です") from e
-        else:
             # レスポンスの解析
             response_body: Any = json.loads(response["body"].read())
             generated_text: str = response_body["generation"]
 
+        except ClientError as e:
+            raise HTTPException(status_code=400, detail="無効な入力です") from e
+
+        except json.JSONDecodeError as e:
+            raise HTTPException(status_code=500, detail="レスポンスのデコードに失敗しました") from e
+
+        except (KeyError, TypeError) as e:
+            raise HTTPException(status_code=500, detail="レスポンスの構造が不正です") from e
+
+        else:
             return generated_text
 
     def generate_invoke_model_payload(self, message_list_schema: MessageList) -> BlobTypeDef:
@@ -116,7 +122,7 @@ class LlamaService(
         content: ContentBlockUnionTypeDef = message["content"][0]
 
         if "text" not in content or not content["text"].strip():
-            raise HTTPException(status_code=400, detail="無効な入力です")
+            raise HTTPException(status_code=400, detail="textパラメータが指定されていません。")
 
         # Llama 3.3 Instructモデル用のプロンプトフォーマット
         formatted_prompt: str = f"""
@@ -158,8 +164,10 @@ class LlamaService(
                 yield chunk["generation"]
 
         except ClientError as e:
-            print(f"エラーが発生しました: {e}")
             raise HTTPException(status_code=400, detail="無効な入力です") from e
+
+        except (json.JSONDecodeError, KeyError, TypeError) as e:
+            raise HTTPException(status_code=500, detail="ストリーミングレスポンスの解析に失敗しました") from e
 
     def generate_invoke_model_stream_payload(self, message_list_schema: MessageList) -> BlobTypeDef:
         """
@@ -258,8 +266,10 @@ class LlamaService(
                     yield chunk["contentBlockDelta"]["delta"]["text"]
 
         except ClientError as e:
-            print(f"エラーが発生しました: {e}")
             raise HTTPException(status_code=400, detail="無効な入力です") from e
+
+        except (KeyError, TypeError) as e:
+            raise HTTPException(status_code=500, detail="ストリーミングレスポンスの解析に失敗しました") from e
 
     def generate_converse_stream_messages(self, message_list_schema: MessageList) -> Sequence[MessageTypeDef]:
         """

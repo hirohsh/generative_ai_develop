@@ -14,5 +14,6 @@
         }
     },
     //autoDocstring
-    "autoDocstring.docstringFormat": "google"
+    "autoDocstring.docstringFormat": "google",
+    "python.analysis.autoImportCompletions": true
 }

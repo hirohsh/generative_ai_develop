@@ -109,8 +109,8 @@ async def invoke_model(
         raise HTTPException(status_code=400, detail="このモデルは対応してません")
 
     payload: BlobTypeDef = bedrock_service.generate_invoke_model_payload(user_input)
-
     response: str = await bedrock_service.invoke_model(payload)
+
     return ORJSONResponse(content=response)
 
 
