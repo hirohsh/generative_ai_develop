@@ -1,10 +1,13 @@
+import logging
 from typing import Any, MutableMapping
 
 from fastapi.responses import ORJSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from app.config.base_config import PRODUCTION_FLUG
+from app.config.base_config import PRODUCTION_FLAG
 from app.schemas.error_response_schema import ErrorDetail, ErrorJsonResponse
+
+logger = logging.getLogger(__name__)
 
 
 class EnhancedTracebackMiddleware:
@@ -30,11 +33,14 @@ class EnhancedTracebackMiddleware:
             # アプリケーション呼び出し(ストリーミング処理中の例外もここでキャッチ可能)
             await self.app(scope, receive, send_wrapper)
         except Exception:
+            # ログ出力
+            logger.exception("An error occurred!")
+
             # すでにレスポンスが開始されている場合は、エラーレスポンスを送信できないため再送出
             if response_started:
                 raise
             # 本番環境では詳細情報を隠す
-            error_detail = "Internal Server Error" if PRODUCTION_FLUG else ""
+            error_detail = "Internal Server Error" if PRODUCTION_FLAG else ""
 
             error = ErrorJsonResponse(
                 detail=[

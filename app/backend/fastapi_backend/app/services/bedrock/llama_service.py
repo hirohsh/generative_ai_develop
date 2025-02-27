@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from typing import TYPE_CHECKING, Any, AsyncGenerator, List
 
 from botocore.exceptions import ClientError
@@ -45,6 +46,9 @@ if TYPE_CHECKING:
     )
 
     from app.schemas.bedrock_schema import MessageList
+
+
+logger = logging.getLogger(__name__)
 
 
 class LlamaService(
@@ -153,7 +157,6 @@ class LlamaService(
         invoke_config["body"] = payload
         try:
             # モデルの呼び出し
-            print(invoke_config)
             response: InvokeModelWithResponseStreamResponseTypeDef = await asyncio.to_thread(
                 self._invoke_model_stream, self.client, invoke_config
             )
@@ -255,7 +258,6 @@ class LlamaService(
         converse_config["messages"] = messages
         try:
             # モデルの呼び出し
-            print(converse_config)
             streaming_response: ConverseStreamResponseTypeDef = await asyncio.to_thread(
                 self._converse_stream, self.client, converse_config
             )
@@ -285,5 +287,4 @@ class LlamaService(
         # 今はいったんこのまま返す
         dumped_schema: dict[str, Any] = message_list_schema.model_dump(exclude_none=True)
         messages: List[MessageTypeDef] = dumped_schema["messages"]
-        print(messages)
         return messages

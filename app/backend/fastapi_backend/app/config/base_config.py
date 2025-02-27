@@ -4,4 +4,4 @@ import os
 APP_ENV = os.getenv("APP_ENV", "development")
 
 # 本番環境かどうかをチェック
-PRODUCTION_FLUG = APP_ENV == "production"
+PRODUCTION_FLAG = APP_ENV == "production"
