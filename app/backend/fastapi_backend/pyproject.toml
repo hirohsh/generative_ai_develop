@@ -46,7 +46,7 @@ ignore_missing_imports = true
 
 [tool.ruff]
 
-line-length = 130
+line-length = 160
 
 # Option Settings
 ## https://gihyo.jp/article/2023/03/monthly-python-2303
