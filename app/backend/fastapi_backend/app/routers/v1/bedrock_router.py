@@ -2,6 +2,7 @@
 bedrock用のルーティングを定義する。
 """
 
+import logging
 from typing import TYPE_CHECKING, Annotated, AsyncGenerator
 
 from fastapi import APIRouter, Body, HTTPException
@@ -24,6 +25,8 @@ from app.interfaces.bedrock_interface import (
 )
 
 router = APIRouter(prefix="/bedrock", tags=["Bedrock"])
+
+logger = logging.getLogger(__name__)
 
 
 @router.post("/converse")
@@ -50,8 +53,13 @@ async def converse(
     if not isinstance(bedrock_service, ISupportsConverse):
         raise HTTPException(status_code=400, detail="このモデルは対応してません")
 
+    logger.info("Converse 処理開始")
+
     converse_messages: Sequence[MessageUnionTypeDef] = bedrock_service.generate_converse_messages(user_input)
     reply_text: str = await bedrock_service.converse(converse_messages)
+
+    logger.info("Converse 処理終了")
+
     return ORJSONResponse(content=reply_text)
 
 
@@ -79,8 +87,13 @@ async def converse_stream(
     if not isinstance(bedrock_service, ISupportsConverseStream):
         raise HTTPException(status_code=400, detail="このモデルは対応してません")
 
+    logger.info("Converse Stream 処理開始")
+
     converse_messages: Sequence[MessageTypeDef] = bedrock_service.generate_converse_stream_messages(user_input)
     stream_generator: AsyncGenerator[str, None] = bedrock_service.converse_stream(converse_messages)
+
+    logger.info("Converse Stream 処理終了")
+
     return StreamingResponse(stream_generator, media_type="text/plain")
 
 
@@ -108,8 +121,12 @@ async def invoke_model(
     if not isinstance(bedrock_service, ISupportsInvokeModel):
         raise HTTPException(status_code=400, detail="このモデルは対応してません")
 
+    logger.info("invoke Model  処理開始")
+
     payload: BlobTypeDef = bedrock_service.generate_invoke_model_payload(user_input)
     response: str = await bedrock_service.invoke_model(payload)
+
+    logger.info("invoke Model  処理終了")
 
     return ORJSONResponse(content=response)
 
@@ -138,7 +155,11 @@ async def invoke_model_stream(
     if not isinstance(bedrock_service, ISupportsInvokeModelStream):
         raise HTTPException(status_code=400, detail="このモデルは対応してません")
 
-    payload: BlobTypeDef = bedrock_service.generate_invoke_model_stream_payload(user_input)
+    logger.info("invoke Model Stream 処理開始")
 
+    payload: BlobTypeDef = bedrock_service.generate_invoke_model_stream_payload(user_input)
     stream_generator: AsyncGenerator[str, None] = bedrock_service.invoke_model_stream(payload)
+
+    logger.info("invoke Model Stream 処理終了")
+
     return StreamingResponse(stream_generator, media_type="text/plain")
