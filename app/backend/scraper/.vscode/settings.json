@@ -1,0 +1,19 @@
+{
+    // mypyの設定
+    "mypy-type-checker.args": [
+        "--config=pyproject.toml"
+    ],
+    "mypy-type-checker.cwd": "${nearestConfig}",
+    // Ruffの設定
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll": "explicit",
+            "source.organizeImports": "explicit"
+        }
+    },
+    //autoDocstring
+    "autoDocstring.docstringFormat": "google",
+    "python.analysis.autoImportCompletions": true
+}
