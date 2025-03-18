@@ -10,17 +10,32 @@ services:
       - type: bind
         source: './app/frontend/'
         target: '/app'
-  backend:
+  backend_fastapi:
     build:
-      context: ./app/backend/
+      context: ./app/backend/fastapi_backend
       dockerfile: Dockerfile
       target: develop
     tty: true
     stdin_open: true
     volumes:
       - type: bind
-        source: './app/backend/'
-        target: '/app'
+        source: './app/backend/fastapi_backend'
+        target: '/fastapi_backend'
+      - type: bind
+        source: '/home/hiro/.aws/config'
+        target: '/root/.aws/config'
+        read_only: true
+  backend_scraper:
+    build:
+      context: ./app/backend/scraper
+      dockerfile: Dockerfile
+      target: develop
+    tty: true
+    stdin_open: true
+    volumes:
+      - type: bind
+        source: './app/backend/scraper'
+        target: '/scraper'
       - type: bind
         source: '/home/hiro/.aws/config'
         target: '/root/.aws/config'
