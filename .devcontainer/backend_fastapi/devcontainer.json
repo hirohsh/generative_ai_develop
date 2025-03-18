@@ -1,0 +1,26 @@
+{
+    "name": "DOCKER TEST BACKEND FASTAPI",
+    "dockerComposeFile": "../../docker-compose.yml",
+    "service": "backend_fastapi",
+    "workspaceFolder": "/fastapi_backend",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "IBM.output-colorizer",
+                "christian-kohler.path-intellisense",
+                "ms-python.vscode-pylance",
+                "ms-python.python",
+                "ms-python.debugpy",
+                "njpwerner.autodocstring",
+                "oderwat.indent-rainbow",
+                "aaron-bond.better-comments",
+                "alefragnani.Bookmarks",
+                "usernamehw.errorlens",
+                "njqdev.vscode-python-typehint",
+                "charliermarsh.ruff",
+                "ms-python.mypy-type-checker"
+            ]
+        }
+    }
+
+}

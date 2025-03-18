@@ -143,7 +143,7 @@ class LlamaService(
 
         return request_payload
 
-    async def invoke_model_stream(self, payload: BlobTypeDef) -> AsyncGenerator[str, None]:
+    async def invoke_model_stream(self, payload: BlobTypeDef) -> AsyncGenerator[str]:
         """
         ペイロードを用いてモデルを呼び出す(ストリーミング対応)。
 
@@ -157,9 +157,7 @@ class LlamaService(
         invoke_config["body"] = payload
         try:
             # モデルの呼び出し
-            response: InvokeModelWithResponseStreamResponseTypeDef = await asyncio.to_thread(
-                self._invoke_model_stream, self.client, invoke_config
-            )
+            response: InvokeModelWithResponseStreamResponseTypeDef = await asyncio.to_thread(self._invoke_model_stream, self.client, invoke_config)
 
             # ストリーミング応答をリアルタイムで処理
             for event in response["body"]:
@@ -244,7 +242,7 @@ class LlamaService(
         print(messages)
         return messages
 
-    async def converse_stream(self, messages: Sequence[MessageTypeDef]) -> AsyncGenerator[str, None]:
+    async def converse_stream(self, messages: Sequence[MessageTypeDef]) -> AsyncGenerator[str]:
         """
         Converse Stream API を使用して メッセージを送信する(ストリーミング対応)。
 
@@ -258,9 +256,7 @@ class LlamaService(
         converse_config["messages"] = messages
         try:
             # モデルの呼び出し
-            streaming_response: ConverseStreamResponseTypeDef = await asyncio.to_thread(
-                self._converse_stream, self.client, converse_config
-            )
+            streaming_response: ConverseStreamResponseTypeDef = await asyncio.to_thread(self._converse_stream, self.client, converse_config)
 
             # ストリーミング応答をリアルタイムで処理
             for chunk in streaming_response["stream"]:
