@@ -1,8 +1,8 @@
 {
-    "name": "DOCKER TEST BACKEND",
+    "name": "DOCKER TEST BACKEND SCRAPER",
     "dockerComposeFile": "../../docker-compose.yml",
-    "service": "backend",
-    "workspaceFolder": "/app/fastapi_backend",
+    "service": "backend_scraper",
+    "workspaceFolder": "/scraper",
     "customizations": {
         "vscode": {
             "extensions": [
