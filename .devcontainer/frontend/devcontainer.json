@@ -2,7 +2,7 @@
     "name": "DOCKER TEST FRONTEND",
     "dockerComposeFile": "../../docker-compose.yml",
     "service": "frontend",
-    "workspaceFolder": "/app",
+    "workspaceFolder": "/app/frontend-app",
     "customizations": {
         "vscode": {
             "extensions": [
