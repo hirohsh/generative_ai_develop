@@ -1,4 +1,5 @@
-FROM postgres:17.2-bookworm
+FROM postgres:17.4-bookworm
+
 
 ENV POSTGRES_USER=postgres \
     POSTGRES_PASSWORD=postgres
